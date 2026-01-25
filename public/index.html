@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Movie Populer TMDb</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #141414; color: white; text-align: center; }
+        .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+        .card { width: 200px; background: #222; border-radius: 8px; overflow: hidden; }
+        .card img { width: 100%; height: auto; }
+        .card h3 { font-size: 1rem; padding: 10px; margin: 0; }
+    </style>
+</head>
+<body>
+    <h1>Film Populer Hari Ini</h1>
+    <div id="movie-list" class="container">
+        </div>
+
+    <script>
+        async function fetchPopular() {
+            const response = await fetch('/api/popular');
+            const movies = await response.json();
+            const list = document.getElementById('movie-list');
+            
+            movies.forEach(movie => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                // TMDb background path hanya bagian belakangnya, kita tambahkan URL dasar gambarnya
+                const imgUrl = movie.background ? `https://image.tmdb.org/t/p/w500${movie.background}` : 'https://via.placeholder.com/200x300?text=No+Image';
+                
+                card.innerHTML = `
+                    <img src="${imgUrl}" alt="${movie.title}">
+                    <h3>${movie.title}</h3>
+                `;
+                list.appendChild(card);
+            });
+        }
+        fetchPopular();
+    </script>
+</body>
+</html>
