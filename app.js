@@ -11,6 +11,6 @@ app.use(express.static('public'))
 app.use('/api', router)
 const PORT = process.env.PORT
 app.listen(PORT, ()=>{
-    console.log(`http://localhost:${PORT}/api/movie`);
+    console.log(`http://localhost:${PORT}`);
     
 })

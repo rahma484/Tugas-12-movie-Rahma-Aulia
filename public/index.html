@@ -2,40 +2,158 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Movie Populer TMDb</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Explorer - TMDb</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #141414; color: white; text-align: center; }
-        .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
-        .card { width: 200px; background: #222; border-radius: 8px; overflow: hidden; }
-        .card img { width: 100%; height: auto; }
-        .card h3 { font-size: 1rem; padding: 10px; margin: 0; }
+        /* Gaya Dasar */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #141414; 
+            color: white; 
+            margin: 0;
+            padding-bottom: 50px;
+            text-align: center;
+        }
+        h1 { margin-top: 30px; color: #E50914; }
+        .search-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        input {
+            padding: 12px;
+            width: 300px;
+            border-radius: 4px;
+            border: none;
+            background: #333;
+            color: white;
+            outline: none;
+        }
+        button {
+            padding: 12px 25px;
+            background: #E50914;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:hover { background: #b20710; }
+        .container { 
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px; 
+            padding: 40px; 
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card { 
+            background: #1f1f1f; 
+            border-radius: 10px; 
+            overflow: hidden; 
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            text-align: left;
+        }
+        .card:hover { transform: scale(1.05); }
+        .card img { width: 100%; height: 300px; object-fit: cover; }
+        .card-info { padding: 15px; }
+        .card h3 { font-size: 0.95rem; margin: 0 0 10px 0; height: 2.4em; overflow: hidden; }
+        
+        .overview { 
+            font-size: 0.75rem; 
+            color: #aaa; 
+            height: 3.6em; 
+            overflow: hidden; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 3; 
+            line-clamp: 3; 
+            -webkit-box-orient: vertical; 
+        }
+        
+        #status-msg { margin: 20px; font-style: italic; color: #888; }
     </style>
 </head>
 <body>
-    <h1>Film Populer Hari Ini</h1>
+
+    <h1>Movie Discovery</h1>
+
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Cari judul film...">
+        <button onclick="handleSearch()">Cari</button>
+        <button onclick="fetchPopular()" style="background: #333;">Populer</button>
+    </div>
+
+    <h2 id="section-title">Film Populer Hari Ini</h2>
+    <div id="status-msg"></div>
+    
     <div id="movie-list" class="container">
         </div>
 
     <script>
-        async function fetchPopular() {
-            const response = await fetch('/api/popular');
-            const movies = await response.json();
-            const list = document.getElementById('movie-list');
-            
-            movies.forEach(movie => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                // TMDb background path hanya bagian belakangnya, kita tambahkan URL dasar gambarnya
-                const imgUrl = movie.background ? `https://image.tmdb.org/t/p/w500${movie.background}` : 'https://via.placeholder.com/200x300?text=No+Image';
-                
-                card.innerHTML = `
-                    <img src="${imgUrl}" alt="${movie.title}">
-                    <h3>${movie.title}</h3>
-                `;
-                list.appendChild(card);
-            });
+    const listContainer = document.getElementById('movie-list');
+    const sectionTitle = document.getElementById('section-title');
+    const statusMsg = document.getElementById('status-msg');
+
+    function renderMovies(movies) {
+        listContainer.innerHTML = '';
+        if (!movies || movies.length === 0) {
+            statusMsg.innerText = "Tidak ada film ditemukan.";
+            return;
         }
-        fetchPopular();
-    </script>
+        statusMsg.innerText = "";
+        movies.forEach(movie => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            const imgUrl = movie.background 
+                ? `https://image.tmdb.org/t/p/w500${movie.background}` 
+                : 'https://via.placeholder.com/500x750?text=No+Poster';
+            
+            card.innerHTML = `
+                <img src="${imgUrl}" alt="${movie.title}">
+                <div class="card-info">
+                    <h3>${movie.title}</h3>
+                    <p class="overview">${movie.overview || 'Tidak ada deskripsi.'}</p>
+                </div>
+            `;
+            listContainer.appendChild(card);
+        });
+    }
+
+    async function fetchPopular() {
+        document.getElementById('search-input').value = ''; 
+        sectionTitle.innerText = "Film Populer Hari Ini";
+        statusMsg.innerText = "Memuat data populer...";
+        try {
+            const response = await fetch('/api/popular'); 
+            const movies = await response.json();
+            renderMovies(movies);
+        } catch (error) {
+            statusMsg.innerText = "Gagal memuat data populer.";
+        }
+    }
+    async function handleSearch(customQuery) {
+        const query = customQuery || document.getElementById('search-input').value;
+        if (!query) return;
+
+        sectionTitle.innerText = customQuery ? "Rekomendasi Film" : `Hasil Pencarian: "${query}"`;
+        statusMsg.innerText = "Mencari...";
+        try {
+            const response = await fetch(`/api/movie?query=${encodeURIComponent(query)}`);
+            const movies = await response.json();
+            renderMovies(movies);
+        } catch (error) {
+            statusMsg.innerText = "Gagal melakukan pencarian.";
+        }
+    }
+
+    handleSearch("Action"); 
+    document.getElementById('search-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') handleSearch();
+    });
+</script>
 </body>
 </html>

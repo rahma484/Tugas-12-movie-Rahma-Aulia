@@ -1,5 +1,3 @@
-//const { create } = require("../config/tmdb")
-
 const createMovie = (movie)=>{
     return{
         title : movie.title,
